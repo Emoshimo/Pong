@@ -16,14 +16,8 @@ public class SkillManager : MonoBehaviour
     // Maximum number of skills per paddle
     public const int MAX_SKILLS_PER_PADDLE = 2;
     
-    // References to skill prefabs
-    public GameObject doubleBallSkillPrefab;
-    public GameObject speedUpBallSkillPrefab;
-    public GameObject slowDownBallSkillPrefab;
-    public GameObject enlargePaddlePrefab;
-    public GameObject shrinkPaddlePrefab;
+    public GameObject fireballSkillPrefab;
     
-    // Flag to indicate if the game is in skill selection mode
     private bool isInSelectionMode = false;
     
     private void Awake()
@@ -38,12 +32,7 @@ public class SkillManager : MonoBehaviour
             Destroy(gameObject);
         }
         
-        // Add all skill prefabs to the available skills list
-        availableSkillPrefabs.Add(doubleBallSkillPrefab);
-        availableSkillPrefabs.Add(speedUpBallSkillPrefab);
-        availableSkillPrefabs.Add(slowDownBallSkillPrefab);
-        availableSkillPrefabs.Add(enlargePaddlePrefab);
-        availableSkillPrefabs.Add(shrinkPaddlePrefab);
+        availableSkillPrefabs.Add(fireballSkillPrefab);
     }
     
     private void Start()
@@ -82,34 +71,40 @@ public class SkillManager : MonoBehaviour
     // Assign default skills at the start if no selection is made
     private void AssignDefaultSkills()
     {
-        // Clear existing skills
         ClearAllSkills();
         
         // Assign first two skills to both paddles
         if (availableSkillPrefabs.Count >= 2)
         {
             AssignSkillToPaddle(1, 0, KeyCode.Q);  // Left paddle, first skill, Q key
-            AssignSkillToPaddle(1, 1, KeyCode.E);  // Left paddle, second skill, E key
             AssignSkillToPaddle(2, 0, KeyCode.U);  // Right paddle, first skill, U key
-            AssignSkillToPaddle(2, 1, KeyCode.O);  // Right paddle, second skill, O key
         }
     }
-    
+    public void ToggleSelectionMode(bool isInSelection)
+    {
+        isInSelectionMode = isInSelection;
+    }
     // Clear all assigned skills
     public void ClearAllSkills()
     {
-        // Destroy existing skill GameObjects
-        foreach (var skill in leftPaddleSkills)
+        foreach (Skill skill in leftPaddleSkills)
         {
-            Destroy(skill.gameObject);
+            if (skill != null)
+            {
+                Destroy(skill.gameObject);
+            }
         }
-        
-        foreach (var skill in rightPaddleSkills)
-        {
-            Destroy(skill.gameObject);
-        }
-        
         leftPaddleSkills.Clear();
+        
+        // Destroy right paddle skills
+        foreach (Skill skill in rightPaddleSkills)
+        {
+            if (skill != null)
+            {
+                Destroy(skill.gameObject);
+            }
+        }
+        
         rightPaddleSkills.Clear();
     }
     
@@ -161,10 +156,40 @@ public class SkillManager : MonoBehaviour
             rightPaddleSkills.RemoveAt(skillIndex);
         }
     }
-    
-    // Toggle skill selection mode
-    public void ToggleSelectionMode(bool isActive)
+    public void ClearRightPaddleSkills()
     {
-        isInSelectionMode = isActive;
+        // Remove existing skills from right paddle
+        foreach (Skill skill in rightPaddleSkills)
+        {
+            if (skill != null)
+            {
+                Destroy(skill.gameObject);
+            }
+        }
+        rightPaddleSkills.Clear();
+    }
+
+    public void EnableAISkillUsage(bool enable)
+    {
+        StartCoroutine(AISkillUsageCoroutine(enable));
+    }
+
+    private IEnumerator AISkillUsageCoroutine(bool enable)
+    {
+        while (enable)
+        {
+            // Wait random time between 3-7 seconds
+            yield return new WaitForSeconds(Random.Range(3f, 7f));
+            
+            if (rightPaddleSkills.Count > 0 && !isInSelectionMode)
+            {
+                // Randomly select a skill to use
+                int randomIndex = Random.Range(0, rightPaddleSkills.Count);
+                if (rightPaddleSkills[randomIndex] != null && !rightPaddleSkills[randomIndex].IsOnCooldown(2))
+                {
+                    rightPaddleSkills[randomIndex].Activate(2);
+                }
+            }
+        }
     }
 }

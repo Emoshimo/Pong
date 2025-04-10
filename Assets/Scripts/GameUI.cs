@@ -12,6 +12,7 @@ public class GameUI : MonoBehaviour
     public TextMeshProUGUI winText;
     public TextMeshProUGUI volumeValueText;
     public TextMeshProUGUI playModeButtonText;
+    public TextMeshProUGUI levelText;
 
     private void Start() {
         AdjustPlayModeText();
@@ -75,6 +76,13 @@ public class GameUI : MonoBehaviour
             case GameManager.PlayMode.AiVsAi:
                 playModeButtonText.text = "Ai vs Ai";
                 break;
+        }
+    }
+    public void UpdateLevelText(int level)
+    {
+        if (levelText != null)
+        {
+            levelText.text = $"Level {level}";
         }
     }
 }

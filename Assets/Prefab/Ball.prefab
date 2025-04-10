@@ -103,10 +103,13 @@ MonoBehaviour:
   ballAudio: {fileID: 0}
   collisionParticle: {fileID: 0}
   maxInitialAngle: 0.67
+  maxCollisionAngle: 45
   moveSpeed: 12
   maxStartY: 3.5
-  speedPaddleMultiplier: 1.1
-  speedWallMultiplier: 1.05
+  speedPaddleMultiplier: 1.02
+  speedWallMultiplier: 1.02
+  IsClone: 0
+  lastHitPaddleId: -1
 --- !u!50 &5856828315438957917
 Rigidbody2D:
   serializedVersion: 4

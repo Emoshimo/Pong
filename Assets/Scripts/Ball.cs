@@ -16,6 +16,7 @@ public class Ball : MonoBehaviour
     private float startX = 0f;
     private float maxSpeed = 270f;
     public bool IsClone = false;
+    public int lastHitPaddleId = -1;
 
     private void Start() 
     {
@@ -66,7 +67,8 @@ public class Ball : MonoBehaviour
             EmitParticle(12);
             AdjustAngle(paddle, other);
             GameManager.instance.screenShake.StartShake(Mathf.Sqrt(rbgd2D.velocity.magnitude) * 0.02f, 0.075f);
-        }    
+            lastHitPaddleId = paddle.id;
+        }       
         
         Wall wall = other.collider.GetComponent<Wall>();
         if (wall)
