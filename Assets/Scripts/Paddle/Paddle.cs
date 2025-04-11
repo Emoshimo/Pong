@@ -14,17 +14,29 @@ public class Paddle : MonoBehaviour
     // Add controller reference that can be either player or AI
     private IPaddleController controller;
     
-    private void Start() 
+    private void Start()
     {
         startPosition = transform.position;
-        GameManager.instance.onReset += ResetPosition;
-        GameManager.instance.gameUI.onStartGame += ChangeGameState;
-        GameManager.instance.onGameEnds += OnGameEnd;
-        GameManager.instance.onGamePaused += OnGamePaused;
+        
+        // Subscribe to events
+        if (GameManager.instance != null)
+        {
+            GameManager.instance.onReset += ResetPosition;
+            GameManager.instance.onGameEnds += OnGameEnd;
+            GameManager.instance.onGamePaused += OnGamePaused;
+            
+            if (GameManager.instance.gameUI != null)
+            {
+                GameManager.instance.gameUI.onStartGame += ChangeGameState;
+            }
+        }
 
         // Set up appropriate controller based on paddle and game mode
         SetupController();
     }
+    
+
+    
     private void OnGamePaused(bool isPaused)
     {
         // Disable physics when paused
@@ -116,11 +128,18 @@ public class Paddle : MonoBehaviour
     
     private void OnDestroy()
     {
-        GameManager.instance.onReset -= ResetPosition;
-        GameManager.instance.gameUI.onStartGame -= ChangeGameState;
-        GameManager.instance.onGameEnds -= OnGameEnd;
-        GameManager.instance.onGamePaused -= OnGamePaused;
-
+        // Unsubscribe from events
+        if (GameManager.instance != null)
+        {
+            GameManager.instance.onReset -= ResetPosition;
+            GameManager.instance.onGameEnds -= OnGameEnd;
+            GameManager.instance.onGamePaused -= OnGamePaused;
+            
+            if (GameManager.instance.gameUI != null)
+            {
+                GameManager.instance.gameUI.onStartGame -= ChangeGameState;
+            }
+        }
     }
 
     public bool IsLeftPaddle()

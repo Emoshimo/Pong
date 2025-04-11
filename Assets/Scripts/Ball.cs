@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class Ball : MonoBehaviour
 {
-    public Rigidbody2D rbgd2D;
+public Rigidbody2D rbgd2D;
     public BallAudio ballAudio;
     public ParticleSystem collisionParticle;
     public float maxInitialAngle = 0.67f;
@@ -18,24 +18,32 @@ public class Ball : MonoBehaviour
     public bool IsClone = false;
     public int lastHitPaddleId = -1;
 
-    private void Start() 
+    private void Start()
     {
-        GameManager.instance.onReset += ResetBall;
-        GameManager.instance.gameUI.onStartGame += ResetBall;
-        GameManager.instance.onGamePaused += OnGamePaused;
-
+        // Subscribe to events
+        if (GameManager.instance != null)
+        {
+            GameManager.instance.onReset += ResetBall;
+            GameManager.instance.onGamePaused += OnGamePaused;
+            
+            if (GameManager.instance.gameUI != null)
+            {
+                GameManager.instance.gameUI.onStartGame += ResetBall;
+            }
+        }
     }
-
     public void ResetBall()
     {
         ResetBallPosition();
         InitialPush();
     }
+    
     private void OnGamePaused(bool isPaused)
     {
         // When paused, disable physics
         rbgd2D.simulated = !isPaused;
     }
+
 
     private void ResetBallPosition() {
         float positionY = Random.Range(-maxStartY, maxStartY);
@@ -119,13 +127,18 @@ public class Ball : MonoBehaviour
         Debug.Log(rotation);
     }
 
-    private void OnDestroy() 
+    private void OnDestroy()
     {
-        GameManager.instance.onReset -= ResetBall;
-        GameManager.instance.gameUI.onStartGame -= ResetBall;
+        // Unsubscribe from events
         if (GameManager.instance != null)
         {
+            GameManager.instance.onReset -= ResetBall;
             GameManager.instance.onGamePaused -= OnGamePaused;
+            
+            if (GameManager.instance.gameUI != null)
+            {
+                GameManager.instance.gameUI.onStartGame -= ResetBall;
+            }
         }
     }
 }

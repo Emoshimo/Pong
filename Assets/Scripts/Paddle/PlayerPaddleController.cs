@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class PlayerPaddleController : IPaddleController
+public class PlayerPaddleController : MonoBehaviour, IPaddleController
 {
     private string inputAxis;
     private Paddle paddle;

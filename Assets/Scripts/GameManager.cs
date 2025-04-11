@@ -5,7 +5,7 @@ using UnityEngine;
 
 public class GameManager : MonoBehaviour
 {
-    public static GameManager instance;  // makes GameManager Singleton
+    public static GameManager instance;
     public int scorePlayer1, scorePlayer2;
     public GameUI gameUI;
     public GameAudio gameAudio;
@@ -13,23 +13,28 @@ public class GameManager : MonoBehaviour
     public Ball ball;
     public Action onReset;
     public Action<int> onGameEnds;
-    public Action<int, int> onScoreChanged; // Add this event for score changes
+    public Action<int, int> onScoreChanged;
     public int maxScore = 4;
-    public PlayMode playMode; 
+    public PlayMode playMode;
+    public bool isPaused = false;
+    public Action<bool> onGamePaused;
 
-    public enum PlayMode {
+    public enum PlayMode
+    {
         PlayerVsPlayer,
         PlayerVsAi,
         AiVsAi
     }
 
-    private void Awake() {
-        if (instance == null) 
+    private void Awake()
+    {
+        if (instance == null)
         {
             instance = this;
-            gameUI.onStartGame += OnStartGame;
+            if (gameUI != null)
+                gameUI.onStartGame += OnStartGame;
         }
-        else 
+        else
         {
             Destroy(gameObject);
         }
@@ -42,7 +47,18 @@ public class GameManager : MonoBehaviour
         {
             LevelManager.instance.OnLevelStart += OnLevelStart;
         }
+        
+        // Connect with UI Event System
+        if (UIEventSystem.instance != null)
+        {
+            UIEventSystem.instance.OnPauseMenuRequested += () => TogglePause();
+            UIEventSystem.instance.OnResumeGameRequested += () => {
+                if (isPaused) TogglePause();
+            };
+            UIEventSystem.instance.OnPlayModeChangeRequested += SwitchPlayMode;
+        }
     }
+    
     void Update()
     {
         if (Input.GetKeyDown(KeyCode.Escape))
@@ -50,28 +66,55 @@ public class GameManager : MonoBehaviour
             TogglePause();
         }
     }
+    
+    private void OnDestroy()
+    {
+        if (gameUI != null)
+            gameUI.onStartGame -= OnStartGame;
+            
+        if (LevelManager.instance != null)
+        {
+            LevelManager.instance.OnLevelStart -= OnLevelStart;
+        }
+        
+        if (UIEventSystem.instance != null)
+        {
+            UIEventSystem.instance.OnPauseMenuRequested -= () => TogglePause();
+            UIEventSystem.instance.OnResumeGameRequested -= () => {
+                if (isPaused) TogglePause();
+            };
+            UIEventSystem.instance.OnPlayModeChangeRequested -= SwitchPlayMode;
+        }
+        
+        onReset = null;
+        onGameEnds = null;
+        onScoreChanged = null;
+        onGamePaused = null;
+    }
+    
     private void OnLevelStart(int level)
     {
-        // Reset game state for new level
         ResetGame();
-        
-        // Update UI to show current level
-        if (gameUI != null)
-        {
-            gameUI.UpdateLevelText(level);
-        }
     }
-
+    
     public void ResetGame()
     {
         // Reset scores
         scorePlayer1 = 0;
         scorePlayer2 = 0;
         
-        // Update UI
-        gameUI.UpdateScore(scorePlayer1, scorePlayer2);
+        // Update UI using event system
+        if (UIEventSystem.instance != null)
+        {
+            UIEventSystem.instance.RequestScoreUpdate(scorePlayer1, scorePlayer2);
+        }
+        else if (gameUI != null)
+        {
+            // Fallback if event system is not available
+            gameUI.UpdateScore(scorePlayer1, scorePlayer2);
+        }
         
-        // Reset ball position and movement
+        // Reset ball
         if (ball != null)
         {
             ball.ResetBall();
@@ -83,75 +126,94 @@ public class GameManager : MonoBehaviour
             GridManager.instance.ClearAllHazards();
         }
         
-        // Notify listeners that game has been reset
-        onReset?.Invoke();
-        
         // Reset any active skills
         if (SkillManager.instance != null)
         {
             SkillManager.instance.ClearAllSkills();
         }
         
+        // Notify listeners that game has been reset
+        onReset?.Invoke();
+        
         // Invoke score changed event with reset scores
         onScoreChanged?.Invoke(scorePlayer1, scorePlayer2);
-        
-        // Log for debugging
-        Debug.Log("Game has been reset");
     }
     
-    public void OnScoreZoneReached(int id) 
+    public void OnScoreZoneReached(int id)
     {
-        if (id == 1) {
+        if (id == 1)
+        {
             scorePlayer1++;
         }
-        else {
+        else
+        {
             scorePlayer2++;
         }
-        gameUI.UpdateScore(scorePlayer1, scorePlayer2);
-        gameUI.HighlightScore(id);
+        
+        // Update UI via event system
+        if (UIEventSystem.instance != null)
+        {
+            UIEventSystem.instance.RequestScoreUpdate(scorePlayer1, scorePlayer2);
+            UIEventSystem.instance.RequestScoreHighlight(id);
+        }
+        else if (gameUI != null)
+        {
+            // Fallback if event system is not available
+            gameUI.UpdateScore(scorePlayer1, scorePlayer2);
+            gameUI.HighlightScore(id);
+        }
         
         // Invoke the score changed event
         onScoreChanged?.Invoke(scorePlayer1, scorePlayer2);
         
         CheckWin();
     }
-
-    private void CheckWin() 
+    
+    private void CheckWin()
     {
         int winnerID = scorePlayer1 == maxScore ? 1 : scorePlayer2 == maxScore ? 2 : 0;
         if (winnerID != 0)
         {
-            //We have a winner
+            // We have a winner
             onGameEnds?.Invoke(winnerID);
+            
+            // Notify UI system of winner
+            if (UIEventSystem.instance != null)
+            {
+                UIEventSystem.instance.RequestGameWinDisplay(winnerID);
+            }
+            
             gameAudio.PlayWinSound();
         }
-        else 
+        else
         {
             gameAudio.PlayScoreSound();
             onReset?.Invoke();
         }
     }
-
+    
     private void OnStartGame()
     {
         scorePlayer1 = 0;
         scorePlayer2 = 0;
-        gameUI.UpdateScore(scorePlayer1, scorePlayer2);
+        
+        // Update UI using event system
+        if (UIEventSystem.instance != null)
+        {
+            UIEventSystem.instance.RequestScoreUpdate(scorePlayer1, scorePlayer2);
+        }
+        else if (gameUI != null)
+        {
+            gameUI.UpdateScore(scorePlayer1, scorePlayer2);
+        }
         
         // Invoke score changed event on game start
         onScoreChanged?.Invoke(scorePlayer1, scorePlayer2);
     }
-    
-    private void OnDestroy()
-    {
-        gameUI.onStartGame -= OnStartGame;
-        onGameEnds = null;
-        onScoreChanged = null;
-    }
 
     public void SwitchPlayMode()
     {
-        switch(playMode)
+        switch (playMode)
         {
             case PlayMode.PlayerVsPlayer:
                 playMode = PlayMode.PlayerVsAi;
@@ -162,7 +224,12 @@ public class GameManager : MonoBehaviour
             case PlayMode.AiVsAi:
                 playMode = PlayMode.PlayerVsPlayer;
                 break;
-
+        }
+        
+        // Notify UI of play mode change
+        if (UIEventSystem.instance != null)
+        {
+            UIEventSystem.instance.RequestPlayModeChange();
         }
     }
     
@@ -170,12 +237,11 @@ public class GameManager : MonoBehaviour
     {
         return playMode == PlayMode.PlayerVsAi || playMode == PlayMode.AiVsAi;
     }
+    
     public bool IsPlayer1Ai()
     {
         return playMode == PlayMode.AiVsAi;
     }
-    public bool isPaused = false;
-    public Action<bool> onGamePaused; // Event triggered when game is paused/unpaused
 
     public void TogglePause()
     {
@@ -184,11 +250,21 @@ public class GameManager : MonoBehaviour
         // Pause/unpause time
         Time.timeScale = isPaused ? 0f : 1f;
         
-        // Show/hide pause menu
-        gameUI.ShowPauseMenu(isPaused);
+        // Show/hide pause menu using event system
+        if (UIEventSystem.instance != null)
+        {
+            if (isPaused)
+                UIEventSystem.instance.RequestPauseMenu();
+            else
+                UIEventSystem.instance.RequestResumeGame();
+        }
+        else if (gameUI != null)
+        {
+            // Fallback if event system is not available
+            gameUI.ShowPauseMenu(isPaused);
+        }
         
         // Notify any listeners
         onGamePaused?.Invoke(isPaused);
     }
-
 }

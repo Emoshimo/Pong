@@ -17,10 +17,6 @@ public class LevelManager : MonoBehaviour
     [Header("Level Data")]
     public List<LevelData> levelDataList = new List<LevelData>();
     
-    [Header("UI References")]
-    public GameObject levelCompletePanel;
-    public GameObject gameOverPanel;
-    
     private LevelData currentLevelData;
     private bool isLevelComplete = false;
     private bool gameOver = false;
@@ -55,8 +51,42 @@ public class LevelManager : MonoBehaviour
             GameManager.instance.onScoreChanged += CheckWinCondition;
         }
         
+        // Subscribe to UI events
+        if (UIEventSystem.instance != null)
+        {
+            UIEventSystem.instance.OnRestartLevelRequested += HandleRestartLevel;
+            UIEventSystem.instance.OnNextLevelRequested += HandleNextLevel;
+            UIEventSystem.instance.OnMainMenuRequested += ReturnToMainMenu;
+        }
+        
         // Initialize the current level
         InitializeLevel(currentLevel);
+    }
+    
+    private void OnDestroy()
+    {
+        // Unsubscribe from events
+        if (GameManager.instance != null)
+        {
+            GameManager.instance.onScoreChanged -= CheckWinCondition;
+        }
+        
+        if (UIEventSystem.instance != null)
+        {
+            UIEventSystem.instance.OnRestartLevelRequested -= HandleRestartLevel;
+            UIEventSystem.instance.OnNextLevelRequested -= HandleNextLevel;
+            UIEventSystem.instance.OnMainMenuRequested -= ReturnToMainMenu;
+        }
+    }
+    
+    private void HandleRestartLevel()
+    {
+        RetryCurrentLevel();
+    }
+    
+    private void HandleNextLevel()
+    {
+        ContinueToNextLevel();
     }
     
     public void InitializeLevel(int level)
@@ -72,6 +102,12 @@ public class LevelManager : MonoBehaviour
         // Trigger level start event
         OnLevelStart?.Invoke(currentLevel);
         
+        // Update UI level text
+        if (UIEventSystem.instance != null)
+        {
+            UIEventSystem.instance.RequestLevelTextUpdate(currentLevel);
+        }
+        
         // Reset state
         isLevelComplete = false;
         gameOver = false;
@@ -79,6 +115,7 @@ public class LevelManager : MonoBehaviour
         // Save current progress
         SaveProgress();
     }
+    
     public LevelData GetCurrentLevelData()
     {
         // If currentLevelData is already loaded, return it directly
@@ -270,13 +307,11 @@ public class LevelManager : MonoBehaviour
         // Stop the game
         Time.timeScale = 0;
         
-        // Show level complete screen
+        // Show level complete screen using events
         bool isLastLevel = currentLevel >= maxLevel;
-        
-        // Show UI
-        if (GameManager.instance != null && GameManager.instance.gameUI != null)
+        if (UIEventSystem.instance != null)
         {
-            GameManager.instance.gameUI.ShowLevelComplete(currentLevel, isLastLevel);
+            UIEventSystem.instance.RequestLevelCompleteDisplay(currentLevel, isLastLevel);
         }
         
         // Trigger event
@@ -299,10 +334,10 @@ public class LevelManager : MonoBehaviour
         // Stop the game
         Time.timeScale = 0;
         
-        // Show game over screen
-        if (GameManager.instance != null && GameManager.instance.gameUI != null)
+        // Show game over screen using events
+        if (UIEventSystem.instance != null)
         {
-            GameManager.instance.gameUI.ShowGameOver(currentLevel);
+            UIEventSystem.instance.RequestGameOverDisplay(currentLevel);
         }
         
         // Trigger event
@@ -313,10 +348,6 @@ public class LevelManager : MonoBehaviour
     {
         // Resume time
         Time.timeScale = 1;
-        
-        // Hide panels
-        if (levelCompletePanel != null)
-            levelCompletePanel.SetActive(false);
             
         // Initialize next level
         InitializeLevel(currentLevel);
@@ -326,10 +357,6 @@ public class LevelManager : MonoBehaviour
     {
         // Resume time
         Time.timeScale = 1;
-        
-        // Hide panels
-        if (gameOverPanel != null)
-            gameOverPanel.SetActive(false);
             
         // Restart current level
         InitializeLevel(currentLevel);

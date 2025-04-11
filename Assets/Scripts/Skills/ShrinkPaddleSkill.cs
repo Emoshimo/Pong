@@ -7,11 +7,6 @@ public class ShrinkPaddleSkill : Skill
     public float sizeMultiplier = 0.5f;
     public float duration = 5f;
     
-    private void Start()
-    {
-        skillName = "Shrink Opponent";
-        // Assign icon in the inspector
-    }
     
     protected override void UseAbility(int paddleId)
     {
