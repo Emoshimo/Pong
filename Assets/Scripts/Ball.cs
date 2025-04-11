@@ -22,12 +22,19 @@ public class Ball : MonoBehaviour
     {
         GameManager.instance.onReset += ResetBall;
         GameManager.instance.gameUI.onStartGame += ResetBall;
+        GameManager.instance.onGamePaused += OnGamePaused;
+
     }
 
     public void ResetBall()
     {
         ResetBallPosition();
         InitialPush();
+    }
+    private void OnGamePaused(bool isPaused)
+    {
+        // When paused, disable physics
+        rbgd2D.simulated = !isPaused;
     }
 
     private void ResetBallPosition() {
@@ -116,6 +123,10 @@ public class Ball : MonoBehaviour
     {
         GameManager.instance.onReset -= ResetBall;
         GameManager.instance.gameUI.onStartGame -= ResetBall;
+        if (GameManager.instance != null)
+        {
+            GameManager.instance.onGamePaused -= OnGamePaused;
+        }
     }
 }
 

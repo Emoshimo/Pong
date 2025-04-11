@@ -43,7 +43,13 @@ public class GameManager : MonoBehaviour
             LevelManager.instance.OnLevelStart += OnLevelStart;
         }
     }
-
+    void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            TogglePause();
+        }
+    }
     private void OnLevelStart(int level)
     {
         // Reset game state for new level
@@ -167,6 +173,22 @@ public class GameManager : MonoBehaviour
     public bool IsPlayer1Ai()
     {
         return playMode == PlayMode.AiVsAi;
+    }
+    public bool isPaused = false;
+    public Action<bool> onGamePaused; // Event triggered when game is paused/unpaused
+
+    public void TogglePause()
+    {
+        isPaused = !isPaused;
+        
+        // Pause/unpause time
+        Time.timeScale = isPaused ? 0f : 1f;
+        
+        // Show/hide pause menu
+        gameUI.ShowPauseMenu(isPaused);
+        
+        // Notify any listeners
+        onGamePaused?.Invoke(isPaused);
     }
 
 }

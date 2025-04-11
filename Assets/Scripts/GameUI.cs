@@ -13,6 +13,9 @@ public class GameUI : MonoBehaviour
     public TextMeshProUGUI volumeValueText;
     public TextMeshProUGUI playModeButtonText;
     public TextMeshProUGUI levelText;
+    public GameObject pauseMenuPanel;
+    public GameObject levelCompletePanel;
+    public GameObject gameOverPanel;
 
     private void Start() {
         AdjustPlayModeText();
@@ -83,6 +86,84 @@ public class GameUI : MonoBehaviour
         if (levelText != null)
         {
             levelText.text = $"Level {level}";
+        }
+    }
+
+    public void ShowPauseMenu(bool show)
+    {
+        if (pauseMenuPanel != null)
+        {
+            pauseMenuPanel.SetActive(show);
+        }
+    }
+
+    public void OnResumeButtonClicked()
+    {
+        if (GameManager.instance != null)
+        {
+            GameManager.instance.TogglePause();
+        }
+    }
+
+    public void OnRestartLevelButtonClicked()
+    {
+        if (LevelManager.instance != null)
+        {
+            Time.timeScale = 1f; // Ensure time is running
+            LevelManager.instance.RetryCurrentLevel();
+            GameManager.instance.isPaused = false;
+        }
+    }
+
+    public void OnMainMenuButtonClicked()
+    {
+        Time.timeScale = 1f; // Ensure time is running
+        UnityEngine.SceneManagement.SceneManager.LoadScene("MainMenu");
+    }
+
+    public void ShowLevelComplete(int level, bool isFinalLevel)
+    {
+        if (levelCompletePanel != null)
+        {
+            // Configure level complete UI
+            TextMeshProUGUI titleText = levelCompletePanel.transform.Find("TitleText")?.GetComponent<TextMeshProUGUI>();
+            if (titleText != null)
+            {
+                titleText.text = $"Level {level} Complete!";
+            }
+            
+            TextMeshProUGUI messageText = levelCompletePanel.transform.Find("MessageText")?.GetComponent<TextMeshProUGUI>();
+            if (messageText != null)
+            {
+                messageText.text = isFinalLevel ? 
+                    "Congratulations! You've completed all levels!" : 
+                    "Great job! Ready for the next challenge?";
+            }
+            
+            // Show the panel
+            levelCompletePanel.SetActive(true);
+        }
+    }
+
+    public void ShowGameOver(int level)
+    {
+        if (gameOverPanel != null)
+        {
+            // Configure game over UI
+            TextMeshProUGUI titleText = gameOverPanel.transform.Find("TitleText")?.GetComponent<TextMeshProUGUI>();
+            if (titleText != null)
+            {
+                titleText.text = "Game Over";
+            }
+            
+            TextMeshProUGUI messageText = gameOverPanel.transform.Find("MessageText")?.GetComponent<TextMeshProUGUI>();
+            if (messageText != null)
+            {
+                messageText.text = $"You were defeated on Level {level}. Would you like to try again?";
+            }
+            
+            // Show the panel
+            gameOverPanel.SetActive(true);
         }
     }
 }

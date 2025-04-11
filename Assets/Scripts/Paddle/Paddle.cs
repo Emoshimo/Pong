@@ -20,11 +20,25 @@ public class Paddle : MonoBehaviour
         GameManager.instance.onReset += ResetPosition;
         GameManager.instance.gameUI.onStartGame += ChangeGameState;
         GameManager.instance.onGameEnds += OnGameEnd;
-        
+        GameManager.instance.onGamePaused += OnGamePaused;
+
         // Set up appropriate controller based on paddle and game mode
         SetupController();
     }
-    
+    private void OnGamePaused(bool isPaused)
+    {
+        // Disable physics when paused
+        rgbd2D.simulated = !isPaused;
+        
+        // Also notify controller
+        if (controller is AIPaddleController aiController)
+        {
+            if (isPaused)
+                aiController.OnGamePaused();
+            else
+                aiController.OnGameResumed();
+        }
+    }
     private void SetupController()
     {
         bool isLeftPaddle = IsLeftPaddle();
@@ -105,6 +119,8 @@ public class Paddle : MonoBehaviour
         GameManager.instance.onReset -= ResetPosition;
         GameManager.instance.gameUI.onStartGame -= ChangeGameState;
         GameManager.instance.onGameEnds -= OnGameEnd;
+        GameManager.instance.onGamePaused -= OnGamePaused;
+
     }
 
     public bool IsLeftPaddle()

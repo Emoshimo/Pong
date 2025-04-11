@@ -46,7 +46,7 @@ public class LevelManager : MonoBehaviour
             return;
         }
     }
-    
+
     private void Start()
     {
         // Subscribe to game events
@@ -271,9 +271,12 @@ public class LevelManager : MonoBehaviour
         Time.timeScale = 0;
         
         // Show level complete screen
-        if (levelCompletePanel != null)
+        bool isLastLevel = currentLevel >= maxLevel;
+        
+        // Show UI
+        if (GameManager.instance != null && GameManager.instance.gameUI != null)
         {
-            levelCompletePanel.SetActive(true);
+            GameManager.instance.gameUI.ShowLevelComplete(currentLevel, isLastLevel);
         }
         
         // Trigger event
@@ -297,9 +300,9 @@ public class LevelManager : MonoBehaviour
         Time.timeScale = 0;
         
         // Show game over screen
-        if (gameOverPanel != null)
+        if (GameManager.instance != null && GameManager.instance.gameUI != null)
         {
-            gameOverPanel.SetActive(true);
+            GameManager.instance.gameUI.ShowGameOver(currentLevel);
         }
         
         // Trigger event
@@ -365,6 +368,7 @@ public class LevelManager : MonoBehaviour
         currentLevel = 1;
         SaveProgress();
     }
+
 }
 
 // Class to hold data specific to each level
